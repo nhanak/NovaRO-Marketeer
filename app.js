@@ -130,12 +130,20 @@ function printRecommendation({
   currentMin,
   stdDeviationWeek,
 }) {
-  const purchase =
-    parseInt(currentMin) <
-    parseInt(averageWeek) - parseInt(stdDeviationWeek) * 0.9
-  const ppu = parseInt(averageWeek) - parseInt(currentMin)
+  const commas = /,/g
+  const zs = /z/g
+  const plusminus = /±/g
+  const currentMinInt = parseInt(currentMin.replace(commas, '').replace(zs, ''))
+  const averWeekInt = parseInt(averageWeek.replace(commas, '').replace(zs, ''))
+  const stdDeviationWeekInt = parseInt(
+    stdDeviationWeek.replace(commas, '').replace(zs, '').replace(plusminus, ''),
+  )
+  console.log(`averWeekInt - currentMinInt = ${averWeekInt} - ${currentMinInt}`)
+  console.log(`stdDeviationWeekInt ${stdDeviationWeekInt}`)
+  const purchase = currentMinInt < averWeekInt - stdDeviationWeek * 0.9
+  const ppu = averWeekInt - currentMinInt
   //if (purchase) {
-  console.log(`${name} | ${currentMin}z | ${averageWeek}z | ${ppu}z`)
+  console.log(`${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
   //}
 }
 
