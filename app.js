@@ -2,28 +2,89 @@ const {Builder, By, until} = require('selenium-webdriver')
 const {toInt} = require('./utils/parser.js')
 const {sleep} = require('./utils/sleep')
 const fs = require('fs')
+var inquirer = require('inquirer')
 const LOGIN_URL =
   'https://www.novaragnarok.com/?module=account&action=login&return_url=%2F%3Fmodule%3Dvending'
 
 const WELCOME_STRING =
-  '--------------------\n|    N O V A R O    |\n| M A R K E T E E R |\n--------------------'
+  '--------------------\n|    N O V A R O    |\n| M A R K E T E E R |\n--------------------\n'
 
 ;(async function run() {
   console.log(WELCOME_STRING)
-  const items = getItems()
+  const openBrowserSession = await promptUserToOpenBrowserSession()
+  if (openBrowserSession) {
+    const driver = await handleOpenBrowserSession()
+    try {
+      let shouldScrapeItems = await promptUserToScrapeItems()
+      while (shouldScrapeItems) {
+        const items = getItems()
+        const scrapedItems = await scrapeItems(driver, items)
+        printRecommendations(scrapedItems)
+        shouldScrapeItems = await promptUserToScrapeItems()
+      }
+    } catch (err) {
+      console.log(err)
+    } finally {
+      await driver.quit()
+    }
+  }
+  console.log('\nThanks for using NovaRO Marketeer!\n')
+})()
+
+async function handleOpenBrowserSession() {
   let driver = await getDriver()
   try {
     await login(driver)
-    const scrapedItems = await scrapeItems(driver, items)
-    printRecommendations(scrapedItems)
+    return driver
   } catch (err) {
-    console.log('Ran into an error in run():')
-    console.log(err)
-  } finally {
-    console.log('\nGoodbye!')
-    await driver.quit()
+    console.log('Ran into an error opening browser session:')
+    throw err
   }
-})()
+}
+
+async function promptUserToOpenBrowserSession() {
+  try {
+    const answers = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'openBrowserSession',
+        message: 'Open new browser session for scraping?',
+        default: true,
+      },
+    ])
+    return answers.openBrowserSession
+  } catch (error) {
+    if (error.isTtyError) {
+      console.log('Render error error: ')
+      console.log(error)
+    } else {
+      console.log('Horrible error:')
+      console.log(error)
+    }
+  }
+}
+
+async function promptUserToScrapeItems() {
+  try {
+    const answers = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'scrapeItems',
+        message: 'Scrape items?',
+        default: true,
+      },
+    ])
+    return answers.scrapeItems
+  } catch (error) {
+    if (error.isTtyError) {
+      console.log('Render error error')
+      throw error
+    } else {
+      console.log('Horrible error')
+      throw error
+    }
+  }
+}
 
 function getItems() {
   return JSON.parse(fs.readFileSync('./data/items.json'))
@@ -37,15 +98,16 @@ async function login(driver) {
   await driver.get(LOGIN_URL)
   console.log('\nYou have 240 seconds to complete the captchas and sign in!')
   await driver.wait(until.elementLocated(By.id('search-input')), 240000)
-  console.log('Succesfully signed into NovaRO')
+  console.log('Succesfully signed into NovaRO\n')
 }
 
 function printRecommendations(scrapedItems) {
-  console.log('Purchase Recommendations')
-  console.log('Name | Buy | Sell | Profit')
+  console.log('\nPurchase Recommendations')
+  console.log('\tName | Buy | Sell | Profit')
   scrapedItems.forEach(item => {
     printRecommendation(item)
   })
+  console.log('\n')
 }
 
 // NAME | BUY | SELL | PROFIT PER UNIT
@@ -61,7 +123,7 @@ function printRecommendation({
   const purchase = currentMinInt < averWeekInt - stdDeviationWeekInt * 0.9
   const ppu = averWeekInt - currentMinInt
   //if (purchase) {
-  console.log(`${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
+  console.log(`\t${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
   //}
 }
 
