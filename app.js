@@ -1,5 +1,6 @@
 const {Builder, By, until} = require('selenium-webdriver')
 const {toInt} = require('./utils/parser')
+const {sleep} = require('./utils/sleep')
 
 const items = [
   {
@@ -141,8 +142,4 @@ function printRecommendation({
   //if (purchase) {
   console.log(`${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
   //}
-}
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms))
 }
