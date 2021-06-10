@@ -1,18 +1,11 @@
 const {Builder, By, until} = require('selenium-webdriver')
 const {toInt} = require('./utils/parser')
 const {sleep} = require('./utils/sleep')
-
-const items = [
-  {
-    name: 'Black Jitterbug Tooth',
-    id: '32567',
-  },
-  {name: 'Enriched Elunium', id: '7619'},
-  {name: 'Enriched Oridecon', id: '7620'},
-]
+const fs = require('fs')
 
 ;(async function run() {
-  let driver = await new Builder().forBrowser('chrome').build()
+  const items = getItems()
+  let driver = await getDriver()
   try {
     // Sign into NovaRO
     await driver.get(
@@ -142,4 +135,12 @@ function printRecommendation({
   //if (purchase) {
   console.log(`${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
   //}
+}
+
+function getItems() {
+  return JSON.parse(fs.readFileSync('./data/items.json'))
+}
+
+async function getDriver() {
+  return await new Builder().forBrowser('chrome').build()
 }
