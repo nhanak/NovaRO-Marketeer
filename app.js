@@ -1,4 +1,5 @@
 const {Builder, By, until} = require('selenium-webdriver')
+const {toInt} = require('./utils/parser')
 
 const items = [
   {
@@ -130,14 +131,9 @@ function printRecommendation({
   currentMin,
   stdDeviationWeek,
 }) {
-  const commas = /,/g
-  const zs = /z/g
-  const plusminus = /±/g
-  const currentMinInt = parseInt(currentMin.replace(commas, '').replace(zs, ''))
-  const averWeekInt = parseInt(averageWeek.replace(commas, '').replace(zs, ''))
-  const stdDeviationWeekInt = parseInt(
-    stdDeviationWeek.replace(commas, '').replace(zs, '').replace(plusminus, ''),
-  )
+  const currentMinInt = toInt(currentMin)
+  const averWeekInt = toInt(averageWeek)
+  const stdDeviationWeekInt = toInt(stdDeviationWeek)
   console.log(`averWeekInt - currentMinInt = ${averWeekInt} - ${currentMinInt}`)
   console.log(`stdDeviationWeekInt ${stdDeviationWeekInt}`)
   const purchase = currentMinInt < averWeekInt - stdDeviationWeek * 0.9

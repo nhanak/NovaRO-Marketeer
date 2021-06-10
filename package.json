@@ -1,5 +1,11 @@
 {
   "dependencies": {
     "selenium-webdriver": "^4.0.0-beta.4"
+  },
+  "devDependencies": {
+    "jest": "^27.0.4"
+  },
+  "scripts": {
+    "test": "jest"
   }
 }
