@@ -2,36 +2,16 @@ const {Builder, By, until} = require('selenium-webdriver')
 const {toInt} = require('./utils/parser')
 const {sleep} = require('./utils/sleep')
 const fs = require('fs')
+const LOGIN_URL =
+  'https://www.novaragnarok.com/?module=account&action=login&return_url=%2F%3Fmodule%3Dvending'
 
 ;(async function run() {
   const items = getItems()
   let driver = await getDriver()
   try {
-    // Sign into NovaRO
-    await driver.get(
-      'https://www.novaragnarok.com/?module=account&action=login&return_url=%2F%3Fmodule%3Dvending',
-    )
-
-    const novaROMarketeerLogo =
-      '--------------------\n|    N O V A R O    |\n| M A R K E T E E R |\n--------------------'
-    console.log(novaROMarketeerLogo)
-    console.log('\nYou have 240 seconds to complete the captchas and sign in!')
-    await driver.wait(until.elementLocated(By.id('search-input')), 240000)
-    console.log('Succesfully signed into NovaRO')
-
-    // Get all recommendations
-    const recommendations = []
-    for (let i = 0; i < items.length; i++) {
-      const recommendation = await getRecommendation(driver, items[i])
-      recommendations.push(recommendation)
-    }
-
-    // Output recommendations to console
-    console.log('\nPURCHASE RECOMMENDATIONS')
-    console.log('Name | Buy | Sell | Profit')
-    recommendations.forEach(recommendation => {
-      printRecommendation(recommendation)
-    })
+    await login(driver)
+    const scrapedItems = await scrapeItems(driver, items)
+    printRecommendations(scrapedItems)
   } catch (err) {
     console.log('Ran into an error in run():')
     console.log(err)
@@ -41,10 +21,61 @@ const fs = require('fs')
   }
 })()
 
-// getRecommendation({name, id}): advise user to purchase or not purchase an item
-async function getRecommendation(driver, {name, id}) {
+function getItems() {
+  return JSON.parse(fs.readFileSync('./data/items.json'))
+}
+
+async function getDriver() {
+  return await new Builder().forBrowser('chrome').build()
+}
+
+async function login(driver) {
+  await driver.get(LOGIN_URL)
+  console.log('\nYou have 240 seconds to complete the captchas and sign in!')
+  await driver.wait(until.elementLocated(By.id('search-input')), 240000)
+  console.log('Succesfully signed into NovaRO')
+}
+
+function printRecommendations(scrapedItems) {
+  console.log('\nPURCHASE RECOMMENDATIONS')
+  console.log('Name | Buy | Sell | Profit')
+  scrapedItems.forEach(item => {
+    printRecommendation(item)
+  })
+}
+
+// NAME | BUY | SELL | PROFIT PER UNIT
+function printRecommendation({
+  name,
+  averageWeek,
+  currentMin,
+  stdDeviationWeek,
+}) {
+  const currentMinInt = toInt(currentMin)
+  const averWeekInt = toInt(averageWeek)
+  const stdDeviationWeekInt = toInt(stdDeviationWeek)
+  console.log(`averWeekInt - currentMinInt = ${averWeekInt} - ${currentMinInt}`)
+  console.log(`stdDeviationWeekInt ${stdDeviationWeekInt}`)
+  const purchase = currentMinInt < averWeekInt - stdDeviationWeek * 0.9
+  const ppu = averWeekInt - currentMinInt
+  //if (purchase) {
+  console.log(`${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
+  //}
+}
+
+async function scrapeItems(driver, items) {
+  console.log('Scraping items:')
+  const scrapedItems = []
+  for (let i = 0; i < items.length; i++) {
+    const scrapedItem = await scrapeItem(driver, items[i])
+    scrapedItems.push(scrapedItem)
+  }
+  return scrapedItems
+}
+
+async function scrapeItem(driver, {name, id}) {
   try {
-    console.log(`\tGetting reccomendation for: ${name}`)
+    console.log(`\t${name}`)
     await driver.get(
       `https://www.novaragnarok.com/?module=vending&action=item&id=${id}`,
     )
@@ -99,7 +130,7 @@ async function getRecommendation(driver, {name, id}) {
       currentMin,
     }
   } catch (err) {
-    console.log('Ran into an error in getRecommendation():')
+    console.log(`Ran into an error scraping item: ${name}`)
     console.log(err)
     return {
       name,
@@ -117,30 +148,4 @@ async function getRecommendation(driver, {name, id}) {
       currentMin: '0',
     }
   }
-}
-// NAME | BUY | SELL | PROFIT PER UNIT
-function printRecommendation({
-  name,
-  averageWeek,
-  currentMin,
-  stdDeviationWeek,
-}) {
-  const currentMinInt = toInt(currentMin)
-  const averWeekInt = toInt(averageWeek)
-  const stdDeviationWeekInt = toInt(stdDeviationWeek)
-  console.log(`averWeekInt - currentMinInt = ${averWeekInt} - ${currentMinInt}`)
-  console.log(`stdDeviationWeekInt ${stdDeviationWeekInt}`)
-  const purchase = currentMinInt < averWeekInt - stdDeviationWeek * 0.9
-  const ppu = averWeekInt - currentMinInt
-  //if (purchase) {
-  console.log(`${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
-  //}
-}
-
-function getItems() {
-  return JSON.parse(fs.readFileSync('./data/items.json'))
-}
-
-async function getDriver() {
-  return await new Builder().forBrowser('chrome').build()
 }
