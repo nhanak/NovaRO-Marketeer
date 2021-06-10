@@ -9,12 +9,15 @@ const LOGIN_URL =
 const WELCOME_STRING =
   '--------------------\n|    N O V A R O    |\n| M A R K E T E E R |\n--------------------\n'
 
+const TABLE_PAD = 22
+
 ;(async function run() {
   console.log(WELCOME_STRING)
   const openBrowserSession = await promptUserToOpenBrowserSession()
   if (openBrowserSession) {
-    const driver = await handleOpenBrowserSession()
+    const driver = await getDriver()
     try {
+      await login(driver)
       let shouldScrapeItems = await promptUserToScrapeItems()
       while (shouldScrapeItems) {
         const items = getItems()
@@ -30,17 +33,6 @@ const WELCOME_STRING =
   }
   console.log('\nThanks for using NovaRO Marketeer!\n')
 })()
-
-async function handleOpenBrowserSession() {
-  let driver = await getDriver()
-  try {
-    await login(driver)
-    return driver
-  } catch (err) {
-    console.log('Ran into an error opening browser session:')
-    throw err
-  }
-}
 
 async function promptUserToOpenBrowserSession() {
   try {
@@ -103,7 +95,17 @@ async function login(driver) {
 
 function printRecommendations(scrapedItems) {
   console.log('\nPurchase Recommendations')
-  console.log('\tName | Buy | Sell | Profit')
+  console.log(
+    `\t${'Name'.padEnd(TABLE_PAD)} | ${'Buy'.padEnd(
+      TABLE_PAD,
+    )} | ${'Sell'.padEnd(TABLE_PAD)} | Profit`,
+  )
+  console.log(
+    `\t${'-'.padEnd(TABLE_PAD + 1, '-')}|${'-'.padEnd(
+      TABLE_PAD + 2,
+      '-',
+    )}|${'-'.padEnd(TABLE_PAD + 2, '-')}|${'-'.padEnd(10, '-')}`,
+  )
   scrapedItems.forEach(item => {
     printRecommendation(item)
   })
@@ -123,7 +125,11 @@ function printRecommendation({
   const purchase = currentMinInt < averWeekInt - stdDeviationWeekInt * 0.9
   const ppu = averWeekInt - currentMinInt
   //if (purchase) {
-  console.log(`\t${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
+  console.log(
+    `\t${name.padEnd(TABLE_PAD)} | ${currentMin.padEnd(
+      TABLE_PAD,
+    )} | ${averageWeek.padEnd(TABLE_PAD)} | ${ppu}z`,
+  )
   //}
 }
 
