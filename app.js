@@ -1,11 +1,15 @@
 const {Builder, By, until} = require('selenium-webdriver')
-const {toInt} = require('./utils/parser')
+const {toInt} = require('./utils/parser.js')
 const {sleep} = require('./utils/sleep')
 const fs = require('fs')
 const LOGIN_URL =
   'https://www.novaragnarok.com/?module=account&action=login&return_url=%2F%3Fmodule%3Dvending'
 
+const WELCOME_STRING =
+  '--------------------\n|    N O V A R O    |\n| M A R K E T E E R |\n--------------------'
+
 ;(async function run() {
+  console.log(WELCOME_STRING)
   const items = getItems()
   let driver = await getDriver()
   try {
@@ -37,7 +41,7 @@ async function login(driver) {
 }
 
 function printRecommendations(scrapedItems) {
-  console.log('\nPURCHASE RECOMMENDATIONS')
+  console.log('Purchase Recommendations')
   console.log('Name | Buy | Sell | Profit')
   scrapedItems.forEach(item => {
     printRecommendation(item)
@@ -54,9 +58,7 @@ function printRecommendation({
   const currentMinInt = toInt(currentMin)
   const averWeekInt = toInt(averageWeek)
   const stdDeviationWeekInt = toInt(stdDeviationWeek)
-  console.log(`averWeekInt - currentMinInt = ${averWeekInt} - ${currentMinInt}`)
-  console.log(`stdDeviationWeekInt ${stdDeviationWeekInt}`)
-  const purchase = currentMinInt < averWeekInt - stdDeviationWeek * 0.9
+  const purchase = currentMinInt < averWeekInt - stdDeviationWeekInt * 0.9
   const ppu = averWeekInt - currentMinInt
   //if (purchase) {
   console.log(`${name} | ${currentMin} | ${averageWeek} | ${ppu}z`)
@@ -64,7 +66,7 @@ function printRecommendation({
 }
 
 async function scrapeItems(driver, items) {
-  console.log('Scraping items:')
+  console.log('\nScraping items:')
   const scrapedItems = []
   for (let i = 0; i < items.length; i++) {
     const scrapedItem = await scrapeItem(driver, items[i])

@@ -3,4 +3,4 @@ function toInt(string) {
   return parseInt(string.replace(reg, ''))
 }
 
-module.exports = toInt
+module.exports = {toInt}
