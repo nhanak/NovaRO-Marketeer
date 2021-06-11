@@ -11,6 +11,8 @@ const WELCOME_STRING =
 
 const TABLE_PAD = 22
 
+const MARKET_CUT = 0.03
+
 ;(async function run() {
   console.log(WELCOME_STRING)
   const openBrowserSession = await promptUserToOpenBrowserSession()
@@ -96,12 +98,12 @@ async function login(driver) {
 function printRecommendations(scrapedItems) {
   console.log('\nPurchase Recommendations')
   console.log(
-    `\t${'Name'.padEnd(TABLE_PAD)} | ${'Buy'.padEnd(
+    `\t${'Name'.padEnd(TABLE_PAD + 15)} | ${'Buy'.padEnd(
       TABLE_PAD,
     )} | ${'Sell'.padEnd(TABLE_PAD)} | Profit`,
   )
   console.log(
-    `\t${'-'.padEnd(TABLE_PAD + 1, '-')}|${'-'.padEnd(
+    `\t${'-'.padEnd(TABLE_PAD + 16, '-')}|${'-'.padEnd(
       TABLE_PAD + 2,
       '-',
     )}|${'-'.padEnd(TABLE_PAD + 2, '-')}|${'-'.padEnd(10, '-')}`,
@@ -122,15 +124,17 @@ function printRecommendation({
   const currentMinInt = toInt(currentMin)
   const averWeekInt = toInt(averageWeek)
   const stdDeviationWeekInt = toInt(stdDeviationWeek)
-  const purchase = currentMinInt < averWeekInt - stdDeviationWeekInt * 0.9
-  const ppu = averWeekInt - currentMinInt
-  //if (purchase) {
-  console.log(
-    `\t${name.padEnd(TABLE_PAD)} | ${currentMin.padEnd(
-      TABLE_PAD,
-    )} | ${averageWeek.padEnd(TABLE_PAD)} | ${ppu}z`,
-  )
-  //}
+  const ppu = Math.floor(averWeekInt - currentMinInt - averWeekInt * MARKET_CUT)
+  const purchase =
+    currentMinInt < averWeekInt - stdDeviationWeekInt * 0.9 && ppu > 0
+
+  if (purchase) {
+    console.log(
+      `\t${name.padEnd(TABLE_PAD + 15)} | ${currentMin.padEnd(
+        TABLE_PAD,
+      )} | ${averageWeek.padEnd(TABLE_PAD)} | ${ppu}z`,
+    )
+  }
 }
 
 async function scrapeItems(driver, items) {
@@ -201,7 +205,6 @@ async function scrapeItem(driver, {name, id}) {
     }
   } catch (err) {
     console.log(`Ran into an error scraping item: ${name}`)
-    console.log(err)
     return {
       name,
       id,
